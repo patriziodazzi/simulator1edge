@@ -1,9 +1,8 @@
 import itertools
 
-# from simulator1edge.network.base import Network
-# from simulator1edge.device.base import Device
+from simulator1edge.device.base import Device
 from simulator1edge.device.concrete import CloudDevice, NetworkSwitchRouter
-from simulator1edge.core import *
+from simulator1edge.network.base import Network
 
 
 # TODO consider to use weigth for latancy

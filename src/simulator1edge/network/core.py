@@ -1,5 +1,4 @@
 import itertools
-import string
 from typing import Any
 
 import networkx as nx
@@ -18,7 +17,7 @@ class EndToEndNetwork(Network):
         network_graph.add_node(end_point_a)
         network_graph.add_node(end_point_b)
         network_graph.add_edge(end_point_a, end_point_b, capacity=bandwidth)
-        print("Linking "+end_point_a+" with "+end_point_b+ " with a bandwidth of: "+bandwidth)
+        print(f"Linking {end_point_a} with {end_point_b} with a bandwidth of: {bandwidth}")
 
 
 class ComputingContinuumNetwork(Network):
@@ -52,7 +51,7 @@ class ComputingContinuumNetwork(Network):
         self._link_bandwidth = value
 
     # NOTE: with clique and torus, the link values are the same for all the links
-    def do_link_computing_infrastructures(self, features: dict[string, Any] = None):
+    def do_link_computing_infrastructures(self, features: dict[str, Any] = None):
 
         if ComputingContinuumNetwork.TPLGY_FEAT in features:
             self._topology = features[ComputingContinuumNetwork.TPLGY_FEAT]

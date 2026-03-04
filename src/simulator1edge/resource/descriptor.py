@@ -1,6 +1,5 @@
 import abc
 import copy
-import string
 from enum import Enum
 
 
@@ -74,7 +73,7 @@ class ResourceDescriptor(abc.ABC):
         self._type = value
 
     @property
-    def value(self) -> string:
+    def value(self):
         return self._value
 
     @value.setter
@@ -83,46 +82,52 @@ class ResourceDescriptor(abc.ABC):
 
 
 class IntegerResourceDescriptor(ResourceDescriptor):
+    """Resource descriptor for integer-valued resources."""
 
-    def __init__(self, res_type: ResourceType, res_value: string):
-        super().__init__(res_type, res_value)
+    def __init__(self, res_type: ResourceType, res_value: int | str):
+        # Store as int internally for consistency
+        super().__init__(res_type, int(res_value) if isinstance(res_value, str) else res_value)
 
     def __gt__(self, other):
-        return int(self.value) > int(other.value)
+        return self.value > other.value
 
     def __eq__(self, other):
-        return int(other.value) == int(self.value)
+        return other.value == self.value
 
     def __add__(self, other):
         ret: IntegerResourceDescriptor = copy.deepcopy(self)
-        ret.value = (int(self.value) + int(other.value))
+        ret.value = self.value + other.value
         return ret
 
     def __sub__(self, other):
         ret: IntegerResourceDescriptor = copy.deepcopy(self)
-        ret.value = (int(self.value) - int(other.value))
+        ret.value = self.value - other.value
         return ret
 
 
 class MemoryAmountResourceDescriptor(IntegerResourceDescriptor):
+    """Memory amount resource descriptor."""
 
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(ResourceType.MEMORY_AMOUNT, res_value)
 
 
 class NetworkBandwidthResourceDescriptor(IntegerResourceDescriptor):
+    """Network bandwidth resource descriptor."""
 
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(ResourceType.NETWORK_BANDWIDTH, res_value)
 
 
 class ProcessingCapacityResourceDescriptor(IntegerResourceDescriptor):
+    """Processing capacity resource descriptor."""
 
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(ResourceType.COMPUTING_CAPACITY, res_value)
 
 
 class StorageSpaceResourceDescriptor(IntegerResourceDescriptor):
+    """Storage space resource descriptor."""
 
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(ResourceType.STORAGE, res_value)

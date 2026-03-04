@@ -1,7 +1,7 @@
 import networkx as nx
 import networkx.algorithms.flow.maxflow as mf
 
-from simulator1edge.core import *
+from simulator1edge.device.base import Device
 
 
 class Network(object):

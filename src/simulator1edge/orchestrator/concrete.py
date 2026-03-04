@@ -1,38 +1,62 @@
 from __future__ import annotations
-from typing import Union, cast
+from typing import Union
 
+from simulator1edge.application.base import Application, Image, Microservice
+from simulator1edge.device.base import Device
+from simulator1edge.infrastructure.base import ComputingInfrastructure
+from simulator1edge.network.base import Network
+from simulator1edge.orchestrator.base import Orchestrator
+from simulator1edge.policies.domain import (
+    DomainSelectionPolicy,
+    SequentialDomainSelectionPolicy,
+)
+from simulator1edge.policies.placement import (
+    FirstCandidatePlacementPolicy,
+    TargetSelectionPolicy,
+)
 from simulator1edge.util.logs import logs
-# from simulator1edge.application.base import Application, Microservice, Image
-# from simulator1edge.infrastructure.cluster import ComputingInfrastructure
-# from simulator1edge.device.base import Device
-# from simulator1edge.network.base import Network
-# from simulator1edge.orchestrator.base import Orchestrator
-
-from simulator1edge.core import *
 
 
 class ContinuumOrchestrator(Orchestrator):
-    def __init__(self, computing_infrastructures: list[ComputingInfrastructure], network: Network):
+    def __init__(self, computing_infrastructures: list[ComputingInfrastructure], network: Network,
+                 domain_selection_strategy: DomainSelectionPolicy | None = None):
         super().__init__(computing_infrastructures, network)
         self._computing_infrastructures = computing_infrastructures
+        self._domain_selection_strategy = domain_selection_strategy or SequentialDomainSelectionPolicy()
 
     def deploy(self, application: Application) -> bool:
-        pass
-
+        result = True
+        for service in application.components:
+            target_infrastructure = self._domain_selection_strategy.select_domain(
+                service, self._computing_infrastructures
+            )
+            if target_infrastructure is None:
+                return False
+            result = result and target_infrastructure.orchestrator.deploy([service])
+        return result
 
 class DomainOrchestrator(Orchestrator):
-    def __init__(self, devices: list[Device], network: Network):
+    def __init__(self, devices: list[Device], network: Network,
+                 target_selection_strategy: TargetSelectionPolicy | None = None):
         super().__init__(devices, network)
+        self._target_selection_strategy = target_selection_strategy or FirstCandidatePlacementPolicy()
 
     def deploy(self, services: list[Microservice]) -> bool:
         result: bool = True
         for service in services:
+            if not self.can_deploy(service):
+                return False
             candidate_resources = self.list_of_candidates(service)
             logs.info("Candidate resources for %s found %s", service.name,
                       ", ".join(i.name for i in candidate_resources))
             image_locations = self._find_image(service.image.name)
             result = result and self._place_service(service, candidate_resources, image_locations)
         return result
+
+    def can_deploy(self, service: Microservice) -> bool:
+        has_candidate = len(self.list_of_candidates(service)) > 0
+        has_image_location = len(self._find_image(service.image.name)[0]) > 0
+        return has_candidate and has_image_location
 
     def list_of_candidates(self, ms: Microservice) -> list[Device]:
         suitable_devices = \
@@ -43,14 +67,14 @@ class DomainOrchestrator(Orchestrator):
         return suitable_devices
 
     # TODO add the second part: image located outside the cloud
-    def _find_image(self, image_name) -> (list[Device], list[Union[Device, ComputingInfrastructure]]):
-        image_locations: list = [i for i in self.resources if (image_name in cast(Device, i).images)]
+    def _find_image(self, image_name) -> tuple[list[Device], list[Union[Device, ComputingInfrastructure]] | None]:
+        image_locations: list = [i for i in self.resources if image_name in i.images]
         return image_locations, None
 
     # TODO consider to create the interface ImageSource to unify devices and computing infrastructures
     # TODO import images from computing infrastructures
     def _find_best_image_location(self, target: Device, image: Image,
-                                  locations: (list[Device], list[Union[Device, ComputingInfrastructure]])) \
+                                  locations: tuple[list[Device], list[Union[Device, ComputingInfrastructure]] | None]) \
             -> Union[Device, ComputingInfrastructure]:
 
         # if the image is available locally, pick one from that set; otherwise the first of the rest
@@ -69,7 +93,7 @@ class DomainOrchestrator(Orchestrator):
                 raise TypeError("Image source location should be either a device or a computing infrastructure.")
 
     def _place_service(self, service: Microservice, candidate_resources: list[Device],
-                       image_locations: (list[Device], list[Union[Device, ComputingInfrastructure]])) -> bool:
+                       image_locations: tuple[list[Device], list[Union[Device, ComputingInfrastructure]] | None]) -> bool:
         """ This method actually places services to the target device.
 
         If the image is not already present into the target device it is transferred into it retrieving it from a
@@ -78,7 +102,8 @@ class DomainOrchestrator(Orchestrator):
 
         # extract the target device
         assert candidate_resources, "No candidate resources available for deployment."
-        target = candidate_resources.pop()
+        target = self._target_selection_strategy.select_target(service, candidate_resources)
+        candidate_resources = [candidate for candidate in candidate_resources if candidate != target]
 
         assert target.has_enough_space_for_image(service.image.storage_space_requirements().rd.value) \
                or target.has_image(service.image.name), "Target device must either have the image locally stored or" \
@@ -110,16 +135,18 @@ class DomainOrchestrator(Orchestrator):
 
 
 class CloudOrchestrator(DomainOrchestrator):
-    def __init__(self, cloud_resources: list[Device], network: Network):
-        super().__init__(cloud_resources, network)
+    def __init__(self, cloud_resources: list[Device], network: Network,
+                 target_selection_strategy: TargetSelectionPolicy | None = None):
+        super().__init__(cloud_resources, network, target_selection_strategy=target_selection_strategy)
 
     def deploy(self, services: list[Microservice]) -> bool:
         return super().deploy(services)
 
 
 class EdgeOrchestrator(DomainOrchestrator):
-    def __init__(self, edge_resources: list[Device], network: Network):
-        super().__init__(edge_resources, network)
+    def __init__(self, edge_resources: list[Device], network: Network,
+                 target_selection_strategy: TargetSelectionPolicy | None = None):
+        super().__init__(edge_resources, network, target_selection_strategy=target_selection_strategy)
 
     def deploy(self, services: list[Microservice]) -> bool:
-        pass
+        return super().deploy(services)

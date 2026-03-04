@@ -1,10 +1,7 @@
 from __future__ import annotations
-import string
 
-#from simulator1edge.device.base import Device
-#from simulator1edge.resource.descriptor import ResourceDescriptor, NetworkBandwidthResourceDescriptor
-
-from simulator1edge.core import *
+from simulator1edge.device.base import Device
+from simulator1edge.resource.descriptor import NetworkBandwidthResourceDescriptor, ResourceDescriptor
 
 
 class EdgeDevice(Device):
@@ -27,7 +24,7 @@ class EdgeDevice(Device):
 
 class CloudDevice(Device):
 
-    def __init__(self, availability_zone: string, resources: list[ResourceDescriptor]):
+    def __init__(self, availability_zone: str, resources: list[ResourceDescriptor]):
         super().__init__(resources)
         self._availability_zone = availability_zone
 
@@ -35,11 +32,11 @@ class CloudDevice(Device):
         return super().__str__()
 
     @property
-    def availability_zone(self) -> string:
+    def availability_zone(self) -> str:
         return self._availability_zone
 
     @availability_zone.setter
-    def availability_zone(self, value: string):
+    def availability_zone(self, value: str):
         self._availability_zone = value
 
 

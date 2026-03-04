@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-import string
-
-from simulator1edge.core import *
-
-# from simulator1edge.resource.requirement import Requirement, StorageSpaceRequirement
+from simulator1edge.resource.requirement import Requirement, StorageSpaceRequirement
 
 
 class Volume(object):
-    def __init__(self, name: string, size: int):
+    def __init__(self, name: str, size: int):
         self.name = name
         self.size = size
 
@@ -16,7 +12,7 @@ class Volume(object):
 class Image(object):
 
     # TODO: consider to decouple images from Image descriptors
-    def __init__(self, name: string, size: int):
+    def __init__(self, name: str, size: int):
         self.name = name
         self.size = size
         self.stored_in_device = None
@@ -29,8 +25,8 @@ class Image(object):
 
 class Microservice(object):
 
-    def __init__(self, name: string, requirements: list[Requirement], image: Image, has_volumes=False,
-                 volumes: list[Volume] = None, batch=False, length: int = -1):
+    def __init__(self, name: str, requirements: list[Requirement], image: Image, has_volumes: bool = False,
+                 volumes: list[Volume] | None = None, batch: bool = False, length: int = -1):
         # Mandatory arguments (name, requirement, image)
         self._requirements = requirements
         self._name = name
@@ -38,24 +34,26 @@ class Microservice(object):
 
         # References to volumes (if any)
         if volumes is None:
-            volumes = {}
-        assert has_volumes == (len(volumes) > 0), "Error in the setting of Microservice volumes"
-        self.has_volumes = has_volumes
-        self._volumes = volumes
+            volumes = []
+        if has_volumes != (len(volumes) > 0):
+            raise ValueError("Error in the setting of Microservice volumes")
+        self._has_volumes = has_volumes
+        self._volumes = list(volumes)
 
         # Information about length (if batch)
-        assert batch == (length > 0), "Error in the setting of Microservice length"
-        self.batch = batch
+        if batch != (length > 0):
+            raise ValueError("Error in the setting of Microservice length")
+        self._batch = batch
         self._length = length
 
-        self._id = hash(self)
+        self._id = id(self)
 
     @property
-    def id(self) -> string:
+    def id(self) -> int:
         return self._id
 
     @property
-    def name(self) -> string:
+    def name(self) -> str:
         return self._name
 
     @property
@@ -74,19 +72,27 @@ class Microservice(object):
         return self._length
 
     def has_volumes(self) -> bool:
-        return self.has_volumes
+        return self._has_volumes
 
     def is_batch(self) -> bool:
-        return self.batch
+        return self._batch
 
 
 class Application(object):
-    def __init__(self, name: string, components: list[Microservice]):
-        self.components = components
-        self.name = name
+    def __init__(self, name: str, components: list[Microservice]):
+        self._components = components
+        self._name = name
+
+    @property
+    def components(self) -> list[Microservice]:
+        return self._components
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     def get_components(self) -> list[Microservice]:
-        return self.components
+        return self._components
 
-    def get_name(self) -> string:
-        return self.name
+    def get_name(self) -> str:
+        return self._name

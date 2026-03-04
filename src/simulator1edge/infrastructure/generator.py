@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import abc
-import string
 
 from abc import ABC, abstractmethod
 from typing import Any, cast
 
-from simulator1edge.core import *
-#from simulator1edge.device.base import Device
+from simulator1edge.device.base import Device
 from simulator1edge.device.concrete import CloudDevice
+from simulator1edge.infrastructure.base import ComputingInfrastructure
 from simulator1edge.infrastructure.cluster import Cloud
 from simulator1edge.infrastructure.continuum import ComputingContinuum
 from simulator1edge.network.areanetwork import CloudAreaNetwork
 from simulator1edge.network.core import ComputingContinuumNetwork
-#from simulator1edge.orchestrator.base import Orchestrator
+from simulator1edge.orchestrator.base import Orchestrator
 from simulator1edge.orchestrator.concrete import CloudOrchestrator, ContinuumOrchestrator
 
 
@@ -34,18 +33,18 @@ class ComputingInfrastructureFactory(ABC):
     DEVS_FEAT = 'devices'
     ORCHS_FEAT = 'orchestrator'
 
-    def __init__(self, features: dict[string, Any] = None) -> None:
+    def __init__(self, features: dict[str, Any] = None) -> None:
         """
         Parameters
         ----------
-        features : dict[string, Any], optional
+        features : dict[str, Any], optional
             The name of the animal
         """
 
-        self.features = features
+        self.features = features or {}
 
-        if ComputingInfrastructureFactory.DEVS_FEAT in features:
-            self._devices = features[ComputingInfrastructureFactory.DEVS_FEAT]
+        if ComputingInfrastructureFactory.DEVS_FEAT in self.features:
+            self._devices = self.features[ComputingInfrastructureFactory.DEVS_FEAT]
         else:
             self._devices = None
 
@@ -67,7 +66,7 @@ class ComputingInfrastructureFactory(ABC):
 
     @devices.setter
     def devices(self, value: list[Device]):
-        self._orchestrator = value
+        self._devices = value
 
     @property
     def orchestrator(self) -> Orchestrator:
@@ -103,7 +102,7 @@ class CloudFactory(ComputingInfrastructureFactory):
     IS_RTD_FEAT = 'is_routed'
     GTWY_FEAT = 'gateway'
 
-    def __init__(self, features: dict[string, Any] = None):
+    def __init__(self, features: dict[str, Any] = None):
         super().__init__(features)
 
         # If internal_bandwidth is provided, uses it, otherwise uses the standard value
@@ -163,7 +162,7 @@ class CloudFactory(ComputingInfrastructureFactory):
     def computing_infrastructure(self):
         return self._computing_infrastructure
 
-    def create_computing_instance(self, instance_features: dict[string, Any] = None) -> ComputingInfrastructure:
+    def create_computing_instance(self, instance_features: dict[str, Any] = None) -> ComputingInfrastructure:
 
         if instance_features:
             if ComputingInfrastructureFactory.DEVS_FEAT in instance_features:
@@ -222,23 +221,23 @@ class IComputingContinuumBuilder(abc.ABC):
 
     @abc.abstractmethod
     def __init__(self):
-        pass
+        raise NotImplementedError("Subclasses must implement __init__().")
 
     @abc.abstractmethod
-    def create_network(self, features: dict[string, Any]):
-        pass
+    def create_network(self, features: dict[str, Any]):
+        raise NotImplementedError("Subclasses must implement create_network().")
 
     @abc.abstractmethod
-    def create_orchestrator(self, features: dict[string, Any]):
-        pass
+    def create_orchestrator(self, features: dict[str, Any]):
+        raise NotImplementedError("Subclasses must implement create_orchestrator().")
 
     @abc.abstractmethod
-    def create_continuum(self, features: dict[string, Any]):
-        pass
+    def create_continuum(self, features: dict[str, Any]):
+        raise NotImplementedError("Subclasses must implement create_continuum().")
 
     @abc.abstractmethod
     def result(self):
-        pass
+        raise NotImplementedError("Subclasses must implement result.")
 
 
 class ComputingContinuumBuildDirector(object):
@@ -247,7 +246,7 @@ class ComputingContinuumBuildDirector(object):
     def __init__(self, builder: IComputingContinuumBuilder):
         self._builder = builder
 
-    def construct(self, features: dict[string, Any]):
+    def construct(self, features: dict[str, Any]):
         self._builder.create_network(features)
         self._builder.create_orchestrator(features)
         self._builder.create_continuum(features)
@@ -265,16 +264,16 @@ class ComputingContinuumBuilder(IComputingContinuumBuilder):
         self._resources = None
         self._computing_infrastructure = None
 
-    def create_network(self, features: dict[string, Any]):
+    def create_network(self, features: dict[str, Any]):
         self._resources: list[ComputingInfrastructure] = features[ComputingContinuumBuildDirector.CMP_CNT_RES_FEAT]
         self._network = ComputingContinuumNetwork(self._resources)
         self._network.do_link_computing_infrastructures(
             {ComputingContinuumNetwork.TPLGY_FEAT: ComputingContinuumNetwork.CLIQ})
 
-    def create_orchestrator(self, features: dict[string, Any]):
+    def create_orchestrator(self, features: dict[str, Any]):
         self._orchestrator = ContinuumOrchestrator(self._resources, self._network)
 
-    def create_continuum(self, features: dict[string, Any]):
+    def create_continuum(self, features: dict[str, Any]):
         self._computing_infrastructure = ComputingContinuum(self._resources, self._orchestrator, self._network)
 
     @property

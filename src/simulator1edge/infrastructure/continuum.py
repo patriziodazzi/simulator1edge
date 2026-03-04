@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import string
 import matplotlib.pyplot as plt
 import networkx as nx
 
-# from simulator1edge.network.base import Network
+from simulator1edge.infrastructure.base import ComputingInfrastructure
+from simulator1edge.network.base import Network
 from simulator1edge.orchestrator.concrete import ContinuumOrchestrator
-# from simulator1edge.infrastructure.cluster import ComputingInfrastructure
-
-from simulator1edge.core import *
 
 
 class ComputingContinuum(object):
@@ -43,11 +40,10 @@ class ComputingContinuum(object):
     def orchestrator(self, value: ContinuumOrchestrator):
         self._orchestrator = value
 
-    def draw_continuum(self, filename: string):
+    def draw_continuum(self, filename: str):
         f = plt.figure()
         nx.draw(self.network.graph,
                 pos=nx.nx_pydot.graphviz_layout(self.network.graph, prog="neato"),
                 node_size=120, node_color='red', linewidths=0.01, font_size=6, font_weight='bold',
                 with_labels=True, ax=f.add_subplot(111))
         f.savefig(filename)
-

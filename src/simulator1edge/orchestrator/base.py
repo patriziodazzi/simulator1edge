@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-# from simulator1edge.application.base import Microservice, Image
-# from simulator1edge.device.base import Device
-# from simulator1edge.network.base import Network
-# from simulator1edge.resource.requirement import Requirement
-
-from simulator1edge.core import *
+from simulator1edge.application.base import Image, Microservice
+from simulator1edge.device.base import Device
+from simulator1edge.network.base import Network
+from simulator1edge.resource.requirement import Requirement
 
 
 class Orchestrator(object):
@@ -22,7 +20,7 @@ class Orchestrator(object):
         return self._network
 
     def list_of_candidates(self, ms: Microservice) -> list:
-        pass
+        raise NotImplementedError("Subclasses must implement list_of_candidates().")
 
     @staticmethod
     def is_device_satisfying_requirement(dev: Device, req: Requirement) -> bool:

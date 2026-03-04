@@ -1,5 +1,4 @@
 import abc
-import string
 
 from simulator1edge.resource.descriptor import ResourceDescriptor, NetworkBandwidthResourceDescriptor, \
     StorageSpaceResourceDescriptor, MemoryAmountResourceDescriptor, ProcessingCapacityResourceDescriptor
@@ -43,7 +42,7 @@ class RequirementSet(object):
 
 class IntegerRequirement(Requirement):
 
-    def __init__(self, rd: ResourceDescriptor, matching: string):
+    def __init__(self, rd: ResourceDescriptor, matching: str):
         super().__init__(rd, matching)
         self.matching = matching
 
@@ -52,20 +51,20 @@ class IntegerRequirement(Requirement):
 
 
 class NetworkBandwidthRequirement(IntegerRequirement):
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(NetworkBandwidthResourceDescriptor(res_value), matching="ge")
 
 
 class StorageSpaceRequirement(IntegerRequirement):
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(StorageSpaceResourceDescriptor(res_value), matching="ge")
 
 
 class MemoryAmountRequirement(IntegerRequirement):
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(MemoryAmountResourceDescriptor(res_value), matching="ge")
 
 
 class ProcessingCapacityResourceRequirement(IntegerRequirement):
-    def __init__(self, res_value: string):
+    def __init__(self, res_value: int | str):
         super().__init__(ProcessingCapacityResourceDescriptor(res_value), matching="ge")
