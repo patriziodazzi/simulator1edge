@@ -72,10 +72,7 @@ class Device(object):
 
     def has_enough_space_for_image(self, size: int) -> bool:
         space = int(self.resources[ResourceType.STORAGE].value)
-        if space > size:
-            return True
-        else:
-            return False
+        return space >= size
 
     def has_enough_resources_for_microservice(self, microservice) -> bool:
         satisfied = True
@@ -91,6 +88,9 @@ class Device(object):
 
     # TODO check if image is already stored
     def store_image(self, img: Image) -> bool:
+
+        if self.has_image(img.name):
+            return True
 
         assert self.has_enough_space_for_image(img.size), \
             f"Not enough space available on device {self.name} for Image {img.name}, space availability should be " \
@@ -110,7 +110,10 @@ class Device(object):
         # Simulation().env.process()
         img_descriptor: Image = device.get_image_with_name(image.name)
 
-        assert self.has_enough_space_for_image(img_descriptor.storage_space_requirements().rd.value), \
+        if self.has_image(image.name):
+            return True
+
+        assert self.has_enough_space_for_image(img_descriptor.size), \
             f"Not enough space available on device {self.name} for Image {image.name}, space availability should be " \
             f"checked with method has_enough_space_for image(image_name)."
 
@@ -132,7 +135,7 @@ class Device(object):
 
         return False
 
-    def start_microservice(self, microservice: Microservice) -> string:
+    def start_microservice(self, microservice: Microservice) -> bool:
 
         srv_img = microservice.image.name
 
@@ -152,12 +155,13 @@ class Device(object):
 
         # store microservice handle in the internal data structure
         self.microservices[microservice.id] = microservice
+        return True
 
     def terminate_microservice(self, microservice_handler: Microservice) -> bool:
 
         # TODO: we must check the ms is the last one to unpin image
-        if microservice_handler.name in self.microservices:
-            self._free_microservice_resources(self.microservices[microservice_handler])
-            del self.microservices[microservice_handler]
+        if microservice_handler.id in self.microservices:
+            self._free_microservice_resources(self.microservices[microservice_handler.id])
+            del self.microservices[microservice_handler.id]
             return True
         return False
