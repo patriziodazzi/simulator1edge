@@ -22,7 +22,7 @@ class Orchestrator(object):
         return self._network
 
     def list_of_candidates(self, ms: Microservice) -> list:
-        pass
+        raise NotImplementedError("Subclasses must implement list_of_candidates().")
 
     @staticmethod
     def is_device_satisfying_requirement(dev: Device, req: Requirement) -> bool:
