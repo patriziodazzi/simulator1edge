@@ -12,9 +12,44 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
 
 ---
 
+## Stato Avanzamento (aggiornato al 2026-03-04)
+
+### Milestone
+- `M1 - MVP Workflow Serverless`: `IN PROGRESS`
+  - fatto: `workflow/` con `WorkflowDAG`, validazione aciclicità, execution engine, report di esecuzione;
+  - fatto: test `test_workflow_dag.py`, `test_workflow_engine.py`;
+  - manca: parser/loader DAG da file (JSON/YAML) e retry semantics complete.
+- `M2 - Cold/Warm e Pool`: `IN PROGRESS`
+  - fatto: `runtime/` con `ContainerPool`, `ImageCache`, `ServerlessRuntime`, metriche cold/warm e cache;
+  - fatto: test `test_runtime_serverless.py` (cold/warm, TTL expiry, eviction, integrazione engine);
+  - manca: integrazione completa col layer infrastructure/device e policy di capacity più avanzate.
+- `M5 - Scheduling SLO-aware`: `PARTIAL`
+  - fatto: framework policy plugin (`policies/`) + catalog factory (`build_placement_policy`, `build_domain_policy`);
+  - fatto: baseline placement `first_candidate`, `most_free_memory`, `least_loaded`; domain `sequential`;
+  - fatto: test `test_orchestrators.py`, `test_policy_catalog.py`;
+  - manca: SLO-aware vero (deadline/costo) e critical-path awareness.
+- `M3`, `M4`, `M6`, `M7`, `M8`, `M9`: `NOT STARTED`
+
+### Componenti già introdotti
+- `workflow/`: `DONE (scaffold + test)`
+- `runtime/`: `DONE (scaffold + test)`
+- `policies/`: `DONE (plugin baseline + catalog + test)`
+- `state/`, `experiments/`, `benchmarks/`: `TODO`
+
+### Suite test attuale
+- `test_workflow_dag.py`: `DONE`
+- `test_workflow_engine.py`: `DONE`
+- `test_runtime_serverless.py`: `DONE`
+- `test_orchestrators.py`: `DONE`
+- `test_policy_catalog.py`: `DONE`
+- `test_regressions.py`: `DONE`
+
+---
+
 ## Milestone Principali
 
 ### M1 - MVP Workflow Serverless
+- Stato: `IN PROGRESS`
 - Nome: `M1 - MVP Workflow Serverless`
 - Descrizione: introdurre modello DAG workflow + runtime base di esecuzione funzioni su orchestratori esistenti.
 - Priorità: `High`
@@ -25,6 +60,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - metriche base per step e workflow (latency, success/fail, retries).
 
 ### M2 - Cold/Warm Start + Container Pool + Image Cache
+- Stato: `IN PROGRESS`
 - Nome: `M2 - Cold/Warm e Pool`
 - Descrizione: modello esplicito di container lifecycle e warm reuse.
 - Priorità: `High`
@@ -35,6 +71,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - cache immagini con eviction policy configurabile.
 
 ### M3 - Network Model Esteso
+- Stato: `NOT STARTED`
 - Nome: `M3 - Network Model Esteso`
 - Descrizione: latenza, bandwidth, contesa e queueing su link/nodi.
 - Priorità: `High`
@@ -45,6 +82,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - test di coerenza su casi sintetici.
 
 ### M4 - State Service con Consistency Configurable
+- Stato: `NOT STARTED`
 - Nome: `M4 - State Service`
 - Descrizione: stato esternalizzato per funzioni/workflow con opzioni eventual/bounded/strong.
 - Priorità: `High`
@@ -55,6 +93,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - scenari che evidenziano differenze tra consistency level.
 
 ### M5 - Scheduler Avanzato SLO-aware
+- Stato: `PARTIAL`
 - Nome: `M5 - Scheduling SLO-aware`
 - Descrizione: placement aware di SLO, dominio edge/cloud e critical-path del DAG.
 - Priorità: `High`
@@ -65,6 +104,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - supporto vincoli SLO (latency/cost/deadline).
 
 ### M6 - Harness Sperimentale Riproducibile
+- Stato: `NOT STARTED`
 - Nome: `M6 - Experimental Harness`
 - Descrizione: framework esperimenti con config scenario, seed, output strutturato.
 - Priorità: `High`
@@ -76,6 +116,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - comparazione automatica tra politiche baseline.
 
 ### M7 - Validazione Empirica
+- Stato: `NOT STARTED`
 - Nome: `M7 - Empirical Validation`
 - Descrizione: calibrazione/validazione con benchmark reali (es. cold start latency).
 - Priorità: `Medium`
@@ -86,6 +127,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - report di calibrazione ripetibile.
 
 ### M8 - CI, QA, Documentazione e Scenari Esempio
+- Stato: `NOT STARTED`
 - Nome: `M8 - CI & Docs`
 - Descrizione: test automation, pipeline CI, guide e scenari pronti.
 - Priorità: `High`
@@ -96,6 +138,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
   - esempi completi replicabili.
 
 ### M9 - Script Generazione Workload
+- Stato: `NOT STARTED`
 - Nome: `M9 - Workload Generation`
 - Descrizione: generatori di DAG/workload realistici (burst, diurnal, mixed payload).
 - Priorità: `Medium`
@@ -333,4 +376,3 @@ run_id,scenario_id,seed,policy_placement,policy_domain,workflow_id,completed,lat
 5. `M6` (harness + export metriche).
 6. `M7` (validazione empirica).
 7. `M8` + `M9` (industrializzazione e benchmark pack).
-
