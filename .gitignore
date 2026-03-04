@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Generated demo artifacts
+ciccio.png
+example.log
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
