@@ -1,31 +1,14 @@
 # simulator1edge
 
-Cloud/Edge simulator prototype per modellare infrastrutture distribuite, reti e deployment di microservizi.
+Cloud/Edge simulator prototype.
 
-## Panoramica
+## Status
 
-`simulator1edge` è un progetto sperimentale nato per simulare:
-- dispositivi cloud/edge con risorse (storage, memoria, bandwidth)
-- network topology tra device e tra cloud
-- deploy di microservizi tramite orchestratori
+This repository appears to be an older research/prototype codebase.
+It can still be executed, but it had no packaging metadata and no dependency list,
+which made it fail out-of-the-box.
 
-Il repository è stato aggiornato per essere eseguibile anche in ambienti offline/restrittivi.
-
-## Struttura del progetto
-
-- `src/simulator1edge/`: codice principale (application, device, network, orchestrator, infrastructure, resource)
-- `test/main.py`: demo end-to-end della simulazione
-- `test/test_regressions.py`: regression test principali
-
-## Requisiti
-
-- Python 3.10+
-
-Il progetto include fallback locali minimali per `simpy`, `networkx` e `matplotlib` sotto `src/`, così la demo può funzionare anche senza installare dipendenze esterne.
-
-## Guida rapida all'uso
-
-### 1) Setup ambiente
+## Quick start
 
 ```bash
 python -m venv .venv
@@ -65,3 +48,10 @@ python -m unittest discover -s test -p 'test_regressions.py' -v
 ## Stato
 
 Prototipo evolutivo: utile per esperimenti e refactoring, non ancora hardenizzato come prodotto production-grade.
+pip install -e .
+python test/main.py
+```
+
+The demo script builds a multi-cloud continuum and runs a simple deployment simulation.
+
+Note: the repository now includes lightweight local fallbacks for `simpy`, `networkx` and `matplotlib` APIs used by this prototype, so the demo can run even in offline/restricted environments.
