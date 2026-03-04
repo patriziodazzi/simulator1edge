@@ -17,12 +17,35 @@ class ContinuumOrchestrator(Orchestrator):
         self._computing_infrastructures = computing_infrastructures
 
     def deploy(self, application: Application) -> bool:
-        pass
+        for service in application.components:
+            deployed = False
+            for infrastructure in self.resources:
+                orchestrator = cast(Orchestrator, infrastructure.orchestrator)
+                candidates = orchestrator.list_of_candidates(service)
+                if not candidates:
+                    continue
+                if orchestrator.deploy([service]):
+                    deployed = True
+                    break
+
+            if not deployed:
+                logs.warning("Unable to deploy service %s on any infrastructure", service.name)
+                return False
+
+        return True
 
 
 class DomainOrchestrator(Orchestrator):
-    def __init__(self, devices: list[Device], network: Network):
+    FIRST_FIT = "first_fit"
+    BEST_FIT = "best_fit"
+
+    def __init__(self, devices: list[Device], network: Network, placement_strategy: str = FIRST_FIT):
         super().__init__(devices, network)
+        self._placement_strategy = placement_strategy
+
+    @property
+    def placement_strategy(self) -> str:
+        return self._placement_strategy
 
     def deploy(self, services: list[Microservice]) -> bool:
         result: bool = True
@@ -31,8 +54,32 @@ class DomainOrchestrator(Orchestrator):
             logs.info("Candidate resources for %s found %s", service.name,
                       ", ".join(i.name for i in candidate_resources))
             image_locations = self._find_image(service.image.name)
+            if not candidate_resources:
+                logs.warning("No candidate resources available for service %s", service.name)
+                return False
+            if not image_locations[0] and not image_locations[1]:
+                logs.warning("No image location found for service %s", service.name)
+                return False
             result = result and self._place_service(service, candidate_resources, image_locations)
         return result
+
+    def _select_target_device(self, service: Microservice, candidate_resources: list[Device]) -> Device:
+        if self.placement_strategy == DomainOrchestrator.BEST_FIT:
+            # choose the candidate with the least remaining MEMORY after deployment (best fit)
+            mem_req = 0
+            for req in service.requirements:
+                if req.resource_type == ResourceType.MEMORY_AMOUNT:
+                    mem_req = int(req.rd.value)
+                    break
+
+            def score(device: Device):
+                available = int(device.resources[ResourceType.MEMORY_AMOUNT].value)
+                return available - mem_req
+
+            return min(candidate_resources, key=score)
+
+        # default: first fit preserves previous behavior
+        return candidate_resources[-1]
 
     def list_of_candidates(self, ms: Microservice) -> list[Device]:
         suitable_devices = \
@@ -43,9 +90,9 @@ class DomainOrchestrator(Orchestrator):
         return suitable_devices
 
     # TODO add the second part: image located outside the cloud
-    def _find_image(self, image_name) -> (list[Device], list[Union[Device, ComputingInfrastructure]]):
-        image_locations: list = [i for i in self.resources if (image_name in cast(Device, i).images)]
-        return image_locations, None
+    def _find_image(self, image_name) -> tuple[list[Device], list[Union[Device, ComputingInfrastructure]]]:
+        image_locations: list[Device] = [i for i in self.resources if (image_name in cast(Device, i).images)]
+        return image_locations, []
 
     # TODO consider to create the interface ImageSource to unify devices and computing infrastructures
     # TODO import images from computing infrastructures
@@ -58,6 +105,8 @@ class DomainOrchestrator(Orchestrator):
             return locations[0].pop()
         else:
             # take the first in the list of source outside the local ComputingInfrastructure
+            if not locations[1]:
+                raise ValueError(f"No image source available for target {target} and image {image.name}.")
             source = locations[1].pop()
 
             # determine if it is a device or a ComputingInfrastructure
@@ -110,16 +159,16 @@ class DomainOrchestrator(Orchestrator):
 
 
 class CloudOrchestrator(DomainOrchestrator):
-    def __init__(self, cloud_resources: list[Device], network: Network):
-        super().__init__(cloud_resources, network)
+    def __init__(self, cloud_resources: list[Device], network: Network, placement_strategy: str = DomainOrchestrator.FIRST_FIT):
+        super().__init__(cloud_resources, network, placement_strategy)
 
     def deploy(self, services: list[Microservice]) -> bool:
         return super().deploy(services)
 
 
 class EdgeOrchestrator(DomainOrchestrator):
-    def __init__(self, edge_resources: list[Device], network: Network):
-        super().__init__(edge_resources, network)
+    def __init__(self, edge_resources: list[Device], network: Network, placement_strategy: str = DomainOrchestrator.FIRST_FIT):
+        super().__init__(edge_resources, network, placement_strategy)
 
     def deploy(self, services: list[Microservice]) -> bool:
-        pass
+        return super().deploy(services)
