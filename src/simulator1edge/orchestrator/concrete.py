@@ -77,19 +77,22 @@ class DomainOrchestrator(Orchestrator):
         """
 
         # extract the target device
+        assert candidate_resources, "No candidate resources available for deployment."
         target = candidate_resources.pop()
 
         assert target.has_enough_space_for_image(service.image.storage_space_requirements().rd.value) \
-               or target.has_image(service.image), "Target device must either have the image locally stored or" \
+               or target.has_image(service.image.name), "Target device must either have the image locally stored or" \
                                                    "enough room for storing it."
 
-        assert image_locations, "There must be at least one instance the image available."
+        assert image_locations[0] or image_locations[1], "There must be at least one instance the image available."
 
         # find the best image instance given the target device
         best_location = self._find_best_image_location(target, service.image, image_locations)
 
         # let the target device retrieve the image
-        successfully_retrieved = target.retrieve_image_from(service.image, best_location)
+        successfully_retrieved = True
+        if target != best_location and not target.has_image(service.image.name):
+            successfully_retrieved = target.retrieve_image_from(service.image, best_location)
 
         if target != best_location:
             print(target.name + " " + best_location.name + " - " + str(self.network.bandwidth(target, best_location)))
@@ -100,7 +103,7 @@ class DomainOrchestrator(Orchestrator):
         # start the service
         successfully_started = target.start_microservice(service)
 
-        assert successfully_retrieved, f"Device {target} was not able to start microservice " \
+        assert successfully_started, f"Device {target} was not able to start microservice " \
                                        f"image {service.name}."
 
         return True
@@ -111,7 +114,7 @@ class CloudOrchestrator(DomainOrchestrator):
         super().__init__(cloud_resources, network)
 
     def deploy(self, services: list[Microservice]) -> bool:
-        super().deploy(services)
+        return super().deploy(services)
 
 
 class EdgeOrchestrator(DomainOrchestrator):
