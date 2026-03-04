@@ -127,7 +127,7 @@ class DomainOrchestrator(Orchestrator):
 
         # extract the target device
         assert candidate_resources, "No candidate resources available for deployment."
-        target = self._select_target_device(service, candidate_resources)
+        target = candidate_resources.pop()
 
         assert target.has_enough_space_for_image(service.image.storage_space_requirements().rd.value) \
                or target.has_image(service.image.name), "Target device must either have the image locally stored or" \
