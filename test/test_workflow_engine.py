@@ -52,6 +52,47 @@ class WorkflowEngineTests(unittest.TestCase):
         self.assertEqual(report.node_executions["c"].status, "failed")
         self.assertEqual(report.node_executions["d"].status, "skipped")
 
+    def test_node_retries_until_success(self):
+        dag = WorkflowDAG("wf")
+        dag.add_node(FunctionSpec("a", "img", 10, retries=2))
+
+        engine = WorkflowExecutionEngine()
+        calls = {"a": 0}
+
+        def run_function(spec: FunctionSpec) -> FunctionExecutionResult:
+            calls[spec.name] += 1
+            if calls[spec.name] < 3:
+                return FunctionExecutionResult(status="failed", latency_ms=5, details="transient")
+            return FunctionExecutionResult(status="success", latency_ms=7)
+
+        report = engine.execute(dag, run_function)
+        node = report.node_executions["a"]
+
+        self.assertEqual(report.status, "success")
+        self.assertEqual(calls["a"], 3)
+        self.assertEqual(node.status, "success")
+        self.assertEqual(node.attempts, 3)
+        self.assertEqual(node.retries_used, 2)
+        self.assertEqual(report.total_latency_ms, 17)
+
+    def test_node_failure_after_retries_marks_workflow_failed(self):
+        dag = WorkflowDAG("wf")
+        dag.add_node(FunctionSpec("a", "img", 10, retries=1))
+
+        engine = WorkflowExecutionEngine()
+
+        def run_function(spec: FunctionSpec) -> FunctionExecutionResult:
+            return FunctionExecutionResult(status="failed", latency_ms=6, details="boom")
+
+        report = engine.execute(dag, run_function)
+        node = report.node_executions["a"]
+
+        self.assertEqual(report.status, "failed")
+        self.assertEqual(node.attempts, 2)
+        self.assertEqual(node.retries_used, 1)
+        self.assertEqual(report.total_latency_ms, 12)
+        self.assertIn("retries exhausted", node.details.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

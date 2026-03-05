@@ -15,10 +15,11 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
 ## Stato Avanzamento (aggiornato al 2026-03-04)
 
 ### Milestone
-- `M1 - MVP Workflow Serverless`: `IN PROGRESS`
+- `M1 - MVP Workflow Serverless`: `DONE`
   - fatto: `workflow/` con `WorkflowDAG`, validazione aciclicità, execution engine, report di esecuzione;
+  - fatto: parser/loader DAG da file e mapping (`JSON`, `YAML` con supporto opzionale `PyYAML`);
+  - fatto: retry semantics nel workflow engine con metriche per nodo (`attempts`, `retries_used`);
   - fatto: test `test_workflow_dag.py`, `test_workflow_engine.py`;
-  - manca: parser/loader DAG da file (JSON/YAML) e retry semantics complete.
 - `M2 - Cold/Warm e Pool`: `IN PROGRESS`
   - fatto: `runtime/` con `ContainerPool`, `ImageCache`, `ServerlessRuntime`, metriche cold/warm e cache;
   - fatto: test `test_runtime_serverless.py` (cold/warm, TTL expiry, eviction, integrazione engine);
@@ -49,7 +50,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
 ## Milestone Principali
 
 ### M1 - MVP Workflow Serverless
-- Stato: `IN PROGRESS`
+- Stato: `DONE`
 - Nome: `M1 - MVP Workflow Serverless`
 - Descrizione: introdurre modello DAG workflow + runtime base di esecuzione funzioni su orchestratori esistenti.
 - Priorità: `High`
@@ -169,7 +170,7 @@ Obiettivo finale: poter rispondere in modo quantitativo a domande del tipo "qual
 - Descrizione: nodi funzione, archi dipendenza, fan-in/fan-out, retry/failure semantics.
 - Priorità: `High`
 - Dipendenze: `M1`
-- Done: DAG aciclico validato + runtime con scheduler event-driven.
+- Done: DAG aciclico validato + runtime con scheduler event-driven + parser/loader DAG + retry semantics.
 
 ### F2 - Function Runtime Model
 - Nome: `F2 - Function Runtime`

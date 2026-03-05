@@ -23,6 +23,8 @@ class NodeExecution:
     start_ms: int
     end_ms: int
     cold_start: bool
+    attempts: int = 1
+    retries_used: int = 0
     details: str = ""
 
 
@@ -62,26 +64,50 @@ class WorkflowExecutionEngine:
                         start_ms=layer_start_ms,
                         end_ms=layer_start_ms,
                         cold_start=False,
+                        attempts=0,
+                        retries_used=0,
                         details=f"Skipped at layer {layer_idx}: predecessor failed.",
                     )
                     layer_durations.append(0)
                     continue
 
-                if accepts_start_ms:
-                    result = run_function(workflow.nodes[node_name], layer_start_ms)
-                else:
-                    result = run_function(workflow.nodes[node_name])
+                spec = workflow.nodes[node_name]
+                max_attempts = 1 + max(spec.retries, 0)
+                total_latency_ms = 0
+                attempts = 0
+                result = FunctionExecutionResult(status="failed", latency_ms=0)
+                for attempt in range(max_attempts):
+                    attempt_start_ms = layer_start_ms + total_latency_ms
+                    if accepts_start_ms:
+                        result = run_function(spec, attempt_start_ms)
+                    else:
+                        result = run_function(spec)
+                    attempts += 1
+                    total_latency_ms += result.latency_ms
+                    if result.status == "success":
+                        break
+
                 node_status: Literal["success", "failed"] = result.status
-                end_ms = layer_start_ms + result.latency_ms
+                end_ms = layer_start_ms + total_latency_ms
+                retries_used = max(attempts - 1, 0)
+                details = result.details
+                if node_status == "failed" and retries_used:
+                    if details:
+                        details = f"{details} (retries exhausted: {retries_used}/{spec.retries})"
+                    else:
+                        details = f"Retries exhausted: {retries_used}/{spec.retries}"
+
                 node_executions[node_name] = NodeExecution(
                     node_name=node_name,
                     status=node_status,
                     start_ms=layer_start_ms,
                     end_ms=end_ms,
                     cold_start=result.cold_start,
-                    details=result.details,
+                    attempts=attempts,
+                    retries_used=retries_used,
+                    details=details,
                 )
-                layer_durations.append(result.latency_ms)
+                layer_durations.append(total_latency_ms)
 
             layer_end_times.append(layer_start_ms + (max(layer_durations) if layer_durations else 0))
 

@@ -5,6 +5,7 @@ from simulator1edge.workflow.engine import (
     WorkflowExecutionEngine,
     WorkflowExecutionReport,
 )
+from simulator1edge.workflow.loader import load_workflow_dag, workflow_dag_from_mapping
 from simulator1edge.workflow.model import FunctionSpec
 
 __all__ = [
@@ -14,4 +15,6 @@ __all__ = [
     "WorkflowDAG",
     "WorkflowExecutionEngine",
     "WorkflowExecutionReport",
+    "load_workflow_dag",
+    "workflow_dag_from_mapping",
 ]
